@@ -1,138 +1,138 @@
-# Person Detection Microservice
+# Микросервис детекции людей
 
-Advanced person detection microservice using computer vision and deep learning technologies. This service processes video streams (RTSP/HTTP) to detect and track people in real-time.
+Современный микросервис для детекции людей в реальном времени с использованием технологий компьютерного зрения и глубокого обучения. Сервис обрабатывает видеопотоки (RTSP/HTTP) для обнаружения и отслеживания людей в реальном времени.
 
-## Features
+## 🚀 Основные возможности
 
-- Real-time person detection using YOLO model optimized with OpenVINO
-- Video stream processing from RTSP/HTTP sources
-- Person tracking across frames
-- Frame annotation with bounding boxes
-- Redis storage for processed frames and detection results
-- RabbitMQ messaging for event notifications
-- REST API for controlling detection sessions
-- Performance monitoring and optimization
-- Configurable detection parameters
-- Thread-safe concurrent processing
+- **Детекция людей в реальном времени** с использованием модели YOLO, оптимизированной с помощью OpenVINO
+- **Обработка видеопотоков** из источников RTSP/HTTP
+- **Отслеживание персон** на протяжении нескольких кадров
+- **Аннотация кадров** с ограничивающими рамками и метками
+- **Хранилище Redis** для обработанных кадров и результатов детекции
+- **Сообщения RabbitMQ** для уведомлений о событиях
+- **REST API** для управления сессиями детекции
+- **Мониторинг производительности** и оптимизация
+- **Конфигурируемые параметры** детекции
+- **Потокобезопасная** многопоточная обработка
 
-## Architecture
+## 🏗️ Архитектура
 
-The service follows a microservice architecture with the following components:
+Сервис реализован по микросервисной архитектуре со следующими компонентами:
 
-### Core Components
-- **Detector**: YOLO-based object detection using OpenVINO
-- **Stream Processor**: Video stream handling and frame extraction
-- **Frame Annotator**: Drawing bounding boxes and labels on frames
-- **Tracker**: Object tracking across frames
-- **Session Manager**: Managing detection sessions and state
+### Основные компоненты
+- **Детектор**: Обнаружение объектов на основе YOLO с использованием OpenVINO
+- **Процессор потока**: Обработка видеопотока и извлечение кадров
+- **Аннотатор кадров**: Рисование ограничивающих рамок и меток на кадрах
+- **Трекер**: Отслеживание объектов на протяжении кадров
+- **Менеджер сессий**: Управление сессиями детекции и состоянием
 
-### Infrastructure Components
-- **Storage**: Redis-based storage for frames and metadata
-- **Messaging**: RabbitMQ for event notifications
-- **Configuration**: Pydantic-based settings management
+### Инфраструктурные компоненты
+- **Хранилище**: Redis-базированное хранилище кадров и метаданных
+- **Сообщения**: RabbitMQ для уведомлений о событиях
+- **Конфигурация**: Управление настройками на основе Pydantic
 
-### Service Components
-- **Detection Worker**: Threaded video processing
-- **Event Manager**: Observer pattern implementation for event handling
-- **Performance Monitor**: Metrics collection and optimization
+### Компоненты сервиса
+- **Рабочий детекции**: Потоковая обработка видео
+- **Менеджер событий**: Реализация паттерна Observer для обработки событий
+- **Монитор производительности**: Сбор метрик и оптимизация
 
-### Design Patterns Implemented
-- **Factory Pattern**: ServiceFactory for creating service instances
-- **Strategy Pattern**: Different detection algorithms (YOLO, OpenCV HOG)
-- **Observer Pattern**: Event management system
-- **Interface Segregation**: Clean interfaces for all components
-- **Dependency Injection**: Through the ServiceFactory
+### Реализованные паттерны проектирования
+- **Фабрика (Factory Pattern)**: ServiceFactory для создания экземпляров сервисов
+- **Стратегия (Strategy Pattern)**: Различные алгоритмы детекции (YOLO, OpenCV HOG)
+- **Наблюдатель (Observer Pattern)**: Система управления событиями
+- **Разделение интерфейсов (Interface Segregation)**: Чистые интерфейсы для всех компонентов
+- **Внедрение зависимостей (Dependency Injection)**: Через ServiceFactory
 
-## Installation
+## 📋 Установка
 
-### Prerequisites
+### Требования
 
 - Python 3.8+
 - OpenVINO toolkit
 - Redis server
 - RabbitMQ server
-- Docker (optional, for containerized deployment)
+- Docker (опционально, для контейнерного развертывания)
 
-### Setup
+### Установка
 
-1. Clone the repository:
+1. Клонируйте репозиторий:
 ```bash
 git clone <repository-url>
 cd person-detection
 ```
 
-2. Install dependencies:
+2. Установите зависимости:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Set up OpenVINO (if not already installed):
+3. Настройте OpenVINO (если еще не установлен):
 ```bash
-# Follow Intel's OpenVINO installation guide for your platform
+# Следуйте руководству Intel по установке OpenVINO для вашей платформы
 source /opt/intel/openvino_2023/setupvars.sh
 ```
 
-4. Configure environment variables:
+4. Настройте переменные окружения:
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Отредактируйте .env с вашей конфигурацией
 ```
 
-## Configuration
+## ⚙️ Конфигурация
 
-The service uses Pydantic Settings for configuration management. Key settings include:
+Сервис использует Pydantic Settings для управления конфигурацией. Ключевые настройки включают:
 
-### Application Settings
-- `APP_HOST`: Host address for the API server (default: 0.0.0.0)
-- `APP_PORT`: Port for the API server (default: 8000)
-- `APP_NAME`: Name of the application (default: "Person Detection Microservice")
-- `APP_VERSION`: Version of the application (default: "2.0.0")
+### Настройки приложения
+- `APP_HOST`: Адрес хоста для API сервера (по умолчанию: 0.0.0.0)
+- `APP_PORT`: Порт для API сервера (по умолчанию: 8000)
+- `APP_NAME`: Название приложения (по умолчанию: "Person Detection Microservice")
+- `APP_VERSION`: Версия приложения (по умолчанию: "2.0")
 
-### Redis Configuration
-- `REDIS_HOST`: Redis server host (default: "localhost")
-- `REDIS_PORT`: Redis server port (default: 6379)
-- `REDIS_PASSWORD`: Redis password (default: "")
-- `REDIS_DB`: Redis database number (default: 0)
-- `REDIS_TTL`: Time-to-live for stored data in seconds (default: 1800)
+### Конфигурация Redis
+- `REDIS_HOST`: Хост Redis сервера (по умолчанию: "localhost")
+- `REDIS_PORT`: Порт Redis сервера (по умолчанию: 6379)
+- `REDIS_PASSWORD`: Пароль Redis (по умолчанию: "")
+- `REDIS_DB`: Номер базы данных Redis (по умолчанию: 0)
+- `REDIS_TTL`: Время жизни данных в секундах (по умолчанию: 1800)
 
-### RabbitMQ Configuration
-- `RABBITMQ_HOST`: RabbitMQ server host (default: "localhost")
-- `RABBITMQ_PORT`: RabbitMQ server port (default: 5672)
-- `RABBITMQ_USERNAME`: RabbitMQ username (default: "admin")
-- `RABBITMQ_PASSWORD`: RabbitMQ password (default: "password")
+### Конфигурация RabbitMQ
+- `RABBITMQ_HOST`: Хост RabbitMQ сервера (по умолчанию: "localhost")
+- `RABBITMQ_PORT`: Порт RabbitMQ сервера (по умолчанию: 5672)
+- `RABBITMQ_USERNAME`: Имя пользователя RabbitMQ (по умолчанию: "admin")
+- `RABBITMQ_PASSWORD`: Пароль RabbitMQ (по умолчанию: "password")
 
-### Model Configuration
-- `MODEL_PATH`: Path to the YOLO model XML file (default: "models/yolo_model.xml")
-- `WEIGHTS_PATH`: Path to the YOLO model BIN file (default: "models/yolo_model.bin")
-- `CONFIDENCE_THRESHOLD`: Minimum confidence for detections (default: 0.5)
-- `NMS_THRESHOLD`: Non-maximum suppression threshold (default: 0.4)
+### Конфигурация модели
+- `MODEL_PATH`: Путь к XML файлу модели YOLO (по умолчанию: "models/yolo_model.xml")
+- `WEIGHTS_PATH`: Путь к BIN файлу модели YOLO (по умолчанию: "models/yolo_model.bin")
+- `CONFIDENCE_THRESHOLD`: Минимальная уверенность для детекции (по умолчанию: 0.5)
+- `NMS_THRESHOLD`: Порог подавления не-максимумов (по умолчанию: 0.4)
 
-### Detection Configuration
-- `DETECTION_INTERVAL`: Time between detections in seconds (default: 0.03)
-- `MAX_FPS`: Maximum frames per second to process (default: 30)
+### Конфигурация детекции
+- `DETECTION_INTERVAL`: Время между детекциями в секундах (по умолчанию: 0.03)
+- `MAX_FPS`: Максимальные кадры в секунду для обработки (по умолчанию: 30)
 
-### Session Configuration
-- `SESSION_TIMEOUT`: Session timeout in seconds (default: 5)
-- `SESSION_TTL`: Session time-to-live in seconds (default: 1800)
+### Конфигурация сессии
+- `SESSION_TIMEOUT`: Таймаут сессии в секундах (по умолчанию: 5)
+- `SESSION_TTL`: Время жизни сессии в секундах (по умолчанию: 1800)
 
-### Performance Configuration
-- `MAX_CONCURRENT_STREAMS`: Maximum number of concurrent streams (default: 10)
-- `FRAME_BUFFER_SIZE`: Size of frame buffer (default: 10)
+### Конфигурация производительности
+- `MAX_CONCURRENT_STREAMS`: Максимальное количество одновременных потоков (по умолчанию: 10)
+- `FRAME_BUFFER_SIZE`: Размер буфера кадров (по умолчанию: 10)
 
-### Tracking Configuration
-- `TRACKING_ENABLED`: Enable object tracking (default: True)
-- `TRACKING_MAX_DISAPPEARED`: Max frames an object can disappear before deregistering (default: 30)
-- `TRACKING_MAX_DISTANCE`: Max distance for object matching (default: 100)
+### Конфигурация отслеживания
+- `TRACKING_ENABLED`: Включить отслеживание объектов (по умолчанию: True)
+- `TRACKING_MAX_DISAPPEARED`: Максимальные кадры, когда объект может исчезнуть перед отменой регистрации (по умолчанию: 30)
+- `TRACKING_MAX_DISTANCE`: Максимальное расстояние для сопоставления объектов (по умолчанию: 100)
 
-## API Endpoints
+## 🌐 API Эндпоинты
 
-### Start Detection
+### Запуск детекции
 ```
 POST /start_detection
 ```
-Start person detection for a video stream.
+Запуск детекции людей для видеопотока.
 
-Request body:
+Тело запроса:
 ```json
 {
   "rtsp_url": "rtsp://example.com/stream",
@@ -140,38 +140,38 @@ Request body:
 }
 ```
 
-Response:
+Ответ:
 ```json
 {
   "status": "success",
-  "message": "Processing stream for camera camera_1 started",
+  "message": "Обработка потока для камеры camera_1 запущена",
   "camera_id": "camera_1",
   "session_id": "session_id_here"
 }
 ```
 
-### Stop Detection
+### Остановка детекции
 ```
 POST /stop_detection?camera_id={camera_id}
 ```
-Stop person detection for a specific camera.
+Остановка детекции для конкретной камеры.
 
-Response:
+Ответ:
 ```json
 {
   "status": "success",
-  "message": "Processing stream for camera_1 stopped",
+  "message": "Обработка потока для камеры camera_1 остановлена",
   "camera_id": "camera_1"
 }
 ```
 
-### Health Check
+### Проверка состояния
 ```
 GET /health
 ```
-Check service health status.
+Проверка состояния сервиса.
 
-Response:
+Ответ:
 ```json
 {
   "status": "healthy",
@@ -181,13 +181,13 @@ Response:
 }
 ```
 
-### Get Session Info
+### Получение информации о сессии
 ```
 GET /session/{session_id}
 ```
-Get information about a specific session.
+Получение информации о конкретной сессии.
 
-Response:
+Ответ:
 ```json
 {
   "session_id": "session_id_here",
@@ -200,110 +200,110 @@ Response:
 }
 ```
 
-## Performance Optimization
+## ⚡ Оптимизация производительности
 
-The service includes several performance optimization features:
+Сервис включает несколько функций оптимизации производительности:
 
-1. **Adaptive Detection**: Adjusts processing based on system performance
-2. **Frame Buffering**: Reduces memory allocation and improves throughput
-3. **Thread Pool**: Manages concurrent operations efficiently
-4. **Performance Monitoring**: Tracks key metrics for optimization
-5. **Configurable Frame Rate**: Limits processing to desired FPS
+1. **Адаптивная детекция**: Регулировка обработки на основе производительности системы
+2. **Буферизация кадров**: Снижение распределения памяти и улучшение пропускной способности
+3. **Пул потоков**: Эффективное управление одновременными операциями
+4. **Мониторинг производительности**: Отслеживание ключевых метрик для оптимизации
+5. **Настраиваемый FPS**: Ограничение обработки до желаемых кадров в секунду
 
-## Docker Deployment
+## 🐳 Docker развертывание
 
-To run the service using Docker:
+Для запуска сервиса с использованием Docker:
 
-1. Build the image:
+1. Соберите образ:
 ```bash
 docker build -t person-detection .
 ```
 
-2. Run the container:
+2. Запустите контейнер:
 ```bash
 docker run -d \
   --name person-detection \
-  -p 8000:8000 \
+  -p 8000:800 \
   -e REDIS_HOST=redis \
   -e RABBITMQ_HOST=rabbitmq \
   person-detection
 ```
 
-## Development
+## 🛠️ Разработка
 
-### Running in Development Mode
+### Запуск в режиме разработки
 
 ```bash
 python -m person_detection.api.main
 ```
 
-### Running Tests
+### Запуск тестов
 
 ```bash
 pytest tests/
 ```
 
-### Code Formatting
+### Форматирование кода
 
-The project uses Black for code formatting:
+Проект использует Black для форматирования кода:
 ```bash
 black .
 ```
 
-## Event System
+## 📡 Система событий
 
-The service implements an event system using the Observer pattern:
+Сервис реализует систему событий с использованием паттерна Observer:
 
-- `SESSION_STARTED`: Emitted when a session starts
-- `SESSION_CLOSED`: Emitted when a session ends
-- `PERSON_DETECTED`: Emitted when people are detected
-- `FRAME_PROCESSED`: Emitted when a frame is processed
-- `ERROR_OCCURRED`: Emitted when an error occurs
+- `SESSION_STARTED`: Вызывается при запуске сессии
+- `SESSION_CLOSED`: Вызывается при завершении сессии
+- `PERSON_DETECTED`: Вызывается при обнаружении людей
+- `FRAME_PROCESSED`: Вызывается при обработке кадра
+- `ERROR_OCCURRED`: Вызывается при возникновении ошибки
 
-## Logging
+## 📝 Логирование
 
-The service provides comprehensive logging with different log levels and output formats. Logs are written to both console and files (with rotation) based on the configuration.
+Сервис предоставляет комплексное логирование с разными уровнями и форматами вывода. Логи записываются как в консоль, так и в файлы (с ротацией) в зависимости от конфигурации.
 
-## Security
+## 🔒 Безопасность
 
-- Input validation on all API endpoints
-- Configurable authentication (to be implemented)
-- Secure connection to Redis and RabbitMQ
-- Environment-based configuration to avoid hardcoded secrets
+- Валидация входных данных на всех эндпоинтах API
+- Настраиваемая аутентификация (в разработке)
+- Безопасное соединение с Redis и RabbitMQ
+- Конфигурация на основе окружения для избежания жестко закодированных секретов
 
-## Scalability
+## 📈 Масштабируемость
 
-The microservice is designed to be horizontally scalable:
-- Stateless design allows multiple instances
-- External dependencies (Redis, RabbitMQ) for state management
-- Configurable resource limits
-- Thread-safe implementation
+Микросервис разработан для горизонтального масштабирования:
+- Stateless дизайн позволяет использовать несколько инстансов
+- Внешние зависимости (Redis, RabbitMQ) для управления состоянием
+- Настраиваемые ограничения ресурсов
+- Потокобезопасная реализация
 
-## Troubleshooting
+## 🔧 Устранение неполадок
 
-### Common Issues
+### Частые проблемы
 
-1. **Model Loading Errors**: Ensure OpenVINO is properly installed and model files exist
-2. **Stream Connection Errors**: Verify RTSP/HTTP URLs are accessible
-3. **Performance Issues**: Adjust MAX_FPS and other performance settings
-4. **Redis/RabbitMQ Connection Errors**: Check service availability and credentials
+1. **Ошибки загрузки модели**: Убедитесь, что OpenVINO установлен корректно и файлы модели существуют
+2. **Ошибки подключения к потоку**: Проверьте доступность URL-адресов RTSP/HTTP
+3. **Проблемы с производительностью**: Настройте MAX_FPS и другие параметры производительности
+4. **Ошибки подключения Redis/RabbitMQ**: Проверьте доступность сервисов и учетные данные
 
-### Performance Monitoring
+### Мониторинг производительности
 
-Monitor these key metrics:
-- Average frame processing time
-- Detection FPS vs. input FPS
-- Memory and CPU usage
-- Redis and RabbitMQ connection status
+Следите за этими ключевыми метриками:
+- Среднее время обработки кадра
+- FPS детекции по сравнению с входным FPS
+- Использование памяти и процессора
+- Статус подключения к Redis и RabbitMQ
 
-## Contributing
+## 🤝 Вклад в проект
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+1. Сделайте fork репозитория
+2. Создайте feature branch
+3. Внесите изменения
+4. Добавьте тесты для новой функциональности
+5. Отправьте pull request
 
-## License
+## 📄 Лицензия
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Этот проект лицензирован под MIT License - смотрите файл LICENSE для деталей.
