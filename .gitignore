@@ -1,0 +1,263 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Models and data
+models/yolo_weights/
+*.weights
+*.pt
+*.onnx
+
+# Docker
+.dockerenv
+.Dockerfile
+.dockerignore
+
+# Process files
+*.pid
+*.out
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+docs/_build/
+
+# Distribution / packaging
+.pybuild/
+.tox/
+.coverage/
+htmlcov/
+
+# Local configuration files
+config.local.py
+local_settings.py
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Compiled files
+*.c
+*.o
+*.a
+*.dylib
+*.dll
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# IDE specific
+.vs/
+*.user
+*.useros
+*.userprefs
+*.suo
+*.csproj.user
+*.dbmdl
+*.dbproj.schemaview.xml
+
+# Python specific
+*.pyc
+*.pyo
+*.pyd
+*.py~
+*.pyc~
+*.pyo~
+*.pyd~
+*.pyc__
+*.pyo__
+*.pyd__
+
+# Coverage
+.coverage.*
+.coverage
+
+# Jupyter
+.ipynb_checkpoints/
+
+# PyCharm
+# Created by .idea folder
+.idea/
+
+# Spyder project settings
+.spyproject/
+
+# Rope project settings
+.ropeproject/
+
+# mkdocs documentation
+/site/
+
+# mypy
+.mypy_cache/
+
+# Pyre
+.pyre/
+
+# Pytest
+pytest_debug.log
+
+# Coverage
+.coverage.xml
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Sage
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder
+.spyproject/
+
+# Rope
+.ropeproject/
+
+# mkdocs
+/site/
+
+# mypy
+.mypy_cache/
+
+# Pyre
+.pyre/
+
+# Redis
+dump.rdb
+
+# RabbitMQ
+# No specific files to ignore for RabbitMQ
+
+# Docker Compose
+.docker-compose/
+
+# Temporary files from editors
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Compiled files
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Logs
+*.log
+logs/
+
+# Local config files
+config.local.*
+*.local
+
+# Cache directories
+.cache/
+__pycache__/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
