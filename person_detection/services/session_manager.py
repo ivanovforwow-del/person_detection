@@ -1,34 +1,48 @@
-"""
-Session Manager Service for Person Detection Microservice
-"""
 import time
 import threading
-from typing import Dict, List, Optional, Any
-from datetime import datetime, timedelta
-from .config import settings
-from ..core.interfaces import ISessionManager, IDataStorage, IMessageBroker
+from typing import Dict, List
+from datetime import datetime
+from config import settings
+from person_detection.domain.entities.detection import Detection
+from person_detection.domain.repositories.session_repository import SessionRepository
+from person_detection.application.ports.detection_gateway import DetectionGateway
 
 
-class SessionManager(ISessionManager):
-    """Session management service"""
+class SessionManager:
+    """Менеджер сессий детекции"""
     
-    def __init__(self, storage: IDataStorage, message_broker: IMessageBroker):
-        self.storage = storage
-        self.message_broker = message_broker
-        self.active_sessions: Dict[str, Dict[str, Any]] = {}  # session_id -> session_info
-        self.person_trackers: Dict[str, Dict[str, float]] = {}  # session_id -> {person_id -> last_seen_time}
+    def __init__(self, session_repository: SessionRepository, detection_gateway: DetectionGateway):
+        self.session_repository = session_repository
+        self.detection_gateway = detection_gateway
+        self.active_sessions: Dict[str, Dict] = {}  # session_id -> session_info
+        self.person_trackers: Dict[str, Dict] = {}  # session_id -> {person_id -> last_seen_time}
         self.lock = threading.Lock()
         
-        # Start background thread for timeout checks
+        # Запуск фонового потока для проверки таймаутов
         self.timeout_checker_thread = threading.Thread(target=self._check_timeouts, daemon=True)
         self.timeout_checker_thread.start()
     
     def start_session(self, camera_id: str) -> str:
-        """Start new detection session"""
+        """Начало новой сессии детекции"""
+        from person_detection.domain.entities.detection import Session
+        import uuid
+        
         with self.lock:
-            session_id = self.storage.create_session(camera_id)
+            session_id = str(uuid.uuid4())
             
-            # Initialize session info
+            # Создаем сущность сессии
+            session = Session(
+                session_id=session_id,
+                camera_id=camera_id,
+                start_time=datetime.utcnow(),
+                person_count=0,
+                status="active"
+            )
+            
+            # Сохраняем сессию в репозиторий
+            self.session_repository.create_session(session)
+            
+            # Инициализируем информацию о сессии
             self.active_sessions[session_id] = {
                 "camera_id": camera_id,
                 "start_time": time.time(),
@@ -36,11 +50,11 @@ class SessionManager(ISessionManager):
                 "person_count": 0
             }
             
-            # Initialize person tracker
+            # Инициализируем трекер персон
             self.person_trackers[session_id] = {}
             
-            # Send session start event
-            self.message_broker.send_session_event(
+            # Отправляем событие начала сессии
+            self.detection_gateway.send_session_event(
                 session_id=session_id,
                 event_type="session_started",
                 data={
@@ -49,72 +63,75 @@ class SessionManager(ISessionManager):
                 }
             )
             
-            print(f"Session {session_id} started for camera {camera_id}")
+            print(f"Сессия {session_id} начата для камеры {camera_id}")
             return session_id
     
-    def update_session(self, session_id: str, detections: List[Dict[str, Any]]) -> bool:
-        """Update session with new detections"""
+    def update_session(self, session_id: str, detections: List[Detection]) -> bool:
+        """Обновление сессии с новыми детекциями"""
         with self.lock:
             if session_id not in self.active_sessions:
                 return False
             
-            # Update last detection time
+            # Обновляем время последней детекции
             self.active_sessions[session_id]["last_detection_time"] = time.time()
             
-            # Update person information
+            # Обновляем информацию о персонах
             current_persons = set()
             for detection in detections:
-                if detection['class_name'] == 'person':
-                    # In a real application, there would be person tracking logic here
-                    # For now, just use index as ID
-                    person_id = detection.get('person_id', len(current_persons))
+                if detection.class_name == 'person':
+                    # В реальном приложении здесь должна быть логика трекинга персон
+                    # Пока просто используем индекс как ID
+                    person_id = detection.person_id or len(current_persons)
                     current_persons.add(person_id)
                     
-                    # Update last seen time for person
+                    # Обновляем время последнего обнаружения персоны
                     self.person_trackers[session_id][person_id] = time.time()
             
-            # Update person count
+            # Обновляем количество персон
             person_count = len(current_persons)
             self.active_sessions[session_id]["person_count"] = person_count
             
-            # Update session in storage
-            self.storage.update_session(session_id, person_count)
+            # Получаем текущую сессию из репозитория и обновляем
+            session = self.session_repository.get_session(session_id)
+            if session:
+                session.person_count = person_count
+                session.last_update = datetime.utcnow()
+                self.session_repository.update_session(session)
             
-            # Extend session TTL
-            # Note: RedisStorage doesn't have extend_session_ttl method in current implementation
-            # We'll rely on regular updates to keep session alive
+            # Продляем TTL сессии
+            self.session_repository.extend_session_ttl(session_id)
             
             return True
     
     def _check_timeouts(self):
-        """Background timeout checking"""
+        """Фоновая проверка таймаутов сессий и персон"""
         while True:
-            time.sleep(1)  # Check every second
+            time.sleep(1)  # Проверяем каждую секунду
             
             with self.lock:
                 current_time = time.time()
                 sessions_to_close = []
                 
                 for session_id, session_info in list(self.active_sessions.items()):
-                    # Check session timeout (no detections for 5 seconds)
+                    # Проверяем таймаут сессии (нет детекций в течение 5 секунд)
                     time_since_last_detection = current_time - session_info["last_detection_time"]
                     
                     if time_since_last_detection > settings.session_timeout:
                         sessions_to_close.append(session_id)
                 
-                # Close expired sessions
+                # Закрываем просроченные сессии
                 for session_id in sessions_to_close:
                     self._close_session_internal(session_id)
     
     def _close_session_internal(self, session_id: str):
-        """Internal method to close session"""
+        """Внутренний метод закрытия сессии"""
         if session_id in self.active_sessions:
-            # Close session in storage
-            self.storage.close_session(session_id)
+            # Закрываем сессию в репозитории
+            self.session_repository.close_session(session_id)
             
-            # Send session close event
+            # Отправляем событие закрытия сессии
             session_info = self.active_sessions[session_id]
-            self.message_broker.send_session_event(
+            self.detection_gateway.send_session_event(
                 session_id=session_id,
                 event_type="session_closed",
                 data={
@@ -125,20 +142,20 @@ class SessionManager(ISessionManager):
                 }
             )
             
-            # Remove session from internal storage
+            # Удаляем сессию из внутреннего хранилища
             del self.active_sessions[session_id]
             if session_id in self.person_trackers:
                 del self.person_trackers[session_id]
             
-            print(f"Session {session_id} closed due to timeout")
+            print(f"Сессия {session_id} закрыта по таймауту")
     
     def close_session(self, session_id: str):
-        """Explicitly close session"""
+        """Явное закрытие сессии"""
         with self.lock:
             if session_id in self.active_sessions:
                 self._close_session_internal(session_id)
     
     def is_session_active(self, session_id: str) -> bool:
-        """Check if session is active"""
+        """Проверка активности сессии"""
         with self.lock:
             return session_id in self.active_sessions

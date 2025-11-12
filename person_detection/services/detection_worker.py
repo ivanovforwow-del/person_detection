@@ -1,106 +1,88 @@
-"""
-Detection Worker Service for Person Detection Microservice
-"""
 import threading
 import time
 import uuid
-from typing import Dict, List, Any
-from .config import settings
-from ..core.interfaces import (
-    IStreamProcessor, IDetector, IFrameAnnotator, 
-    IDataStorage, IMessageBroker, ISessionManager
-)
+from typing import Dict
+from person_detection.core.stream_processor import StreamProcessor
+from person_detection.domain.services.detection_service import DetectionService
+from person_detection.domain.services.frame_annotation_service import FrameAnnotationService
+from person_detection.services.session_manager import SessionManager
+from person_detection.application.ports.detection_gateway import DetectionGateway
+from logger_config import stream_logger, detection_logger
 
 
 class DetectionWorker:
-    """Worker for processing video streams and detecting persons"""
+    """Работник для обработки видеопотока и детекции объектов"""
     
     def __init__(
         self,
-        stream_processor: IStreamProcessor,
-        detector: IDetector,
-        frame_annotator: IFrameAnnotator,
-        storage: IDataStorage,
-        message_broker: IMessageBroker,
-        session_manager: ISessionManager
+        stream_processor: StreamProcessor,
+        detection_service: DetectionService,
+        frame_annotator: FrameAnnotationService,
+        session_manager: SessionManager,
+        detection_gateway: DetectionGateway
     ):
         self.stream_processor = stream_processor
-        self.detector = detector
+        self.detection_service = detection_service
         self.frame_annotator = frame_annotator
-        self.storage = storage
-        self.message_broker = message_broker
         self.session_manager = session_manager
+        self.detection_gateway = detection_gateway
         
-        self.active = False
-        self.thread = None
-        self.person_mapping = {}
-    
-    def start_detection(self, camera_id: str, rtsp_url: str) -> str:
-        """Start person detection for a camera stream"""
-        # Start new session
-        session_id = self.session_manager.start_session(camera_id)
-        
-        # Start processing thread
-        self.active = True
-        self.thread = threading.Thread(
-            target=self._process_stream,
-            args=(camera_id, rtsp_url, session_id),
-            daemon=True
-        )
-        self.thread.start()
-        
-        return session_id
-    
-    def stop_detection(self, session_id: str):
-        """Stop person detection for a session"""
-        self.active = False
-        self.session_manager.close_session(session_id)
-    
-    def _process_stream(self, camera_id: str, rtsp_url: str, session_id: str):
-        """Process video stream in a separate thread"""
-        print(f"Starting stream processing for camera {camera_id}: {rtsp_url}")
+    def process_stream(self, camera_id: str, rtsp_url: str):
+        """Функция обработки видео потока в отдельном потоке"""
+        stream_logger.info(f"Начало обработки потока для камеры {camera_id}: {rtsp_url}")
         
         try:
-            # Connect to stream
+            # Подключение к потоку
             self.stream_processor.connect_to_stream(rtsp_url)
             
-            while self.active and self.session_manager.is_session_active(session_id):
-                # Read frame
+            # Инициализация сессии
+            session_id = self.session_manager.start_session(camera_id)
+            last_detections = []
+            
+            # Словарь для отслеживания ID персон в сессии
+            person_mapping = {}
+            
+            while self.session_manager.is_session_active(session_id):
+                # Чтение кадра
                 success, frame = self.stream_processor.read_frame()
                 if not success:
-                    time.sleep(0.1)  # Pause before retry
+                    stream_logger.warning(f"Не удалось получить кадр из потока {rtsp_url}")
+                    time.sleep(0.1)  # Пауза перед повторной попыткой
                     continue
                 
-                # Skip frame if needed for FPS control
-                if frame is None:
-                    continue
+                # Детекция людей на кадре
+                detections = self.detection_service.detect(frame)
                 
-                # Detect persons in frame
-                detections = self.detector.detect(frame)
-                
-                # Update session with detections
+                # Обновление сессии с новыми детекциями
                 self.session_manager.update_session(session_id, detections)
                 
-                # Annotate frame
-                annotated_frame = self.frame_annotator.annotate_frame(
-                    frame, detections, self.person_mapping
-                )
+                # Аннотирование кадра
+                annotated_frame = self.frame_annotator.annotate_frame(frame, detections, person_mapping)
                 
-                # Encode frame
+                # Кодирование кадра для сохранения
                 frame_bytes = self.frame_annotator.encode_frame(annotated_frame)
                 
-                # Generate frame ID
+                # Генерация ID кадра
                 frame_id = str(uuid.uuid4())
                 
-                # Store frame in storage
-                self.storage.store_frame(session_id, frame_id, frame_bytes, detections)
+                # Сохранение кадра через gateway
+                self.detection_gateway.store_frame(session_id, frame_id, frame_bytes, detections)
                 
-                # Small delay to control processing rate
-                time.sleep(settings.detection_interval)
-        
+                # Логирование производительности
+                if self.stream_processor.get_fps() > 0:
+                    detection_logger.info(f"FPS: {self.stream_processor.get_fps():.2f}, Найдено людей: {len(detections)}")
+                
+                # Обновление last_detections для возможного использования в других частях системы
+                last_detections = detections
+                
+                # Маленькая задержка для управления FPS
+                time.sleep(0.03)  # ~33 FPS максимум, но реальный FPS зависит от производительности детекции
+            
         except Exception as e:
-            print(f"Error in stream processing {rtsp_url}: {e}")
+            stream_logger.error(f"Ошибка в процессе обработки потока {rtsp_url}: {e}")
         finally:
-            # Release resources
+            # Закрытие сессии при завершении обработки
+            if 'session_id' in locals():
+                self.session_manager.close_session(session_id)
             self.stream_processor.release()
-            print(f"Stream processing for camera {camera_id} completed")
+            stream_logger.info(f"Обработка потока для камеры {camera_id} завершена")

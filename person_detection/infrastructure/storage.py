@@ -6,7 +6,7 @@ import json
 import uuid
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-from .config import settings
+from ..core.config import settings
 from ..core.interfaces import IDataStorage
 
 

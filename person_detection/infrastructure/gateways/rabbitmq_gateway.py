@@ -1,16 +1,14 @@
-"""
-RabbitMQ Messaging Implementation for Person Detection Microservice
-"""
 import pika
 import json
 from typing import Dict, Any
-from ..core.config import settings
-from ..core.interfaces import IMessageBroker
+from config import settings
 import logging
+from person_detection.application.ports.detection_gateway import DetectionGateway
+from person_detection.domain.entities.detection import Detection
 
 
-class RabbitMQBroker(IMessageBroker):
-    """RabbitMQ-based message broker implementation"""
+class RabbitMQGateway(DetectionGateway):
+    """Реализация порта взаимодействия с RabbitMQ"""
     
     def __init__(self):
         self.connection = None
@@ -18,7 +16,7 @@ class RabbitMQBroker(IMessageBroker):
         self.connect()
     
     def connect(self):
-        """Connect to RabbitMQ"""
+        """Подключение к RabbitMQ"""
         try:
             credentials = pika.PlainCredentials(settings.rabbitmq_username, settings.rabbitmq_password)
             parameters = pika.ConnectionParameters(
@@ -30,17 +28,17 @@ class RabbitMQBroker(IMessageBroker):
             self.connection = pika.BlockingConnection(parameters)
             self.channel = self.connection.channel()
             
-            # Declare exchange for detection events
+            # Объявление exchange для событий детекции
             self.channel.exchange_declare(exchange='detection_events', exchange_type='topic', durable=True)
             
-            logging.info("Successfully connected to RabbitMQ")
+            logging.info("Успешно подключено к RabbitMQ")
             
         except Exception as e:
-            logging.error(f"Error connecting to RabbitMQ: {e}")
+            logging.error(f"Ошибка подключения к RabbitMQ: {e}")
             raise
     
     def send_session_event(self, session_id: str, event_type: str, data: Dict[str, Any] = None):
-        """Send session event to RabbitMQ"""
+        """Отправка события сессии в RabbitMQ"""
         try:
             message = {
                 "session_id": session_id,
@@ -60,17 +58,17 @@ class RabbitMQBroker(IMessageBroker):
                 routing_key=routing_key,
                 body=json.dumps(message),
                 properties=pika.BasicProperties(
-                    delivery_mode=2,  # Make message persistent
+                    delivery_mode=2,  # Сделать сообщение устойчивым
                 )
             )
             
-            logging.info(f"Session event {event_type} sent to RabbitMQ: {session_id}")
+            logging.info(f"Событие сессии {event_type} отправлено в RabbitMQ: {session_id}")
             
         except Exception as e:
-            logging.error(f"Error sending event to RabbitMQ: {e}")
-            # Attempt reconnection on error
+            logging.error(f"Ошибка отправки события в RabbitMQ: {e}")
+            # Попытка переподключения при ошибке
             self.reconnect()
-            # Retry sending
+            # Повторная отправка
             try:
                 self.channel.basic_publish(
                     exchange='detection_events',
@@ -81,23 +79,33 @@ class RabbitMQBroker(IMessageBroker):
                     )
                 )
             except Exception as retry_error:
-                logging.error(f"Error retrying event send to RabbitMQ: {retry_error}")
+                logging.error(f"Ошибка повторной отправки события в RabbitMQ: {retry_error}")
+    
+    def store_frame(self, session_id: str, frame_id: str, frame_data: bytes, detections: list) -> bool:
+        """Сохранение кадра с детекциями - в RabbitMQ просто отправляем сообщение о новом кадре"""
+        # В этой реализации мы не сохраняем кадр через RabbitMQ, а только отправляем событие
+        # Сохранение кадра осуществляется через Redis
+        return True
+
+    def extend_session_ttl(self, session_id: str) -> bool:
+        """Продление времени жизни сессии - в RabbitMQ не требуется"""
+        return True
     
     def reconnect(self):
-        """Reconnect to RabbitMQ"""
+        """Переподключение к RabbitMQ"""
         try:
             if self.connection and not self.connection.is_closed:
                 self.connection.close()
         except:
-            pass  # Ignore errors during closing
+            pass  # Игнорируем ошибки при закрытии
         
         self.connect()
     
     def close(self):
-        """Close RabbitMQ connection"""
+        """Закрытие соединения с RabbitMQ"""
         try:
             if self.connection and not self.connection.is_closed:
                 self.connection.close()
-            logging.info("RabbitMQ connection closed")
+            logging.info("Соединение с RabbitMQ закрыто")
         except Exception as e:
-            logging.error(f"Error closing RabbitMQ connection: {e}")
+            logging.error(f"Ошибка закрытия соединения с RabbitMQ: {e}")
